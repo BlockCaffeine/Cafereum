@@ -2,10 +2,8 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import 'dotenv/config';
 
-// const walletPrivateKey = process.env.WALLET_PRIVATE_KEY;
-const walletPrivateKey = process.env.WALLET_PRIVATE_KEY_LOCALHOST;
-
-if (!walletPrivateKey) throw new Error('WALLET_PRIVATE_KEY is not defined in the environment variables');
+// const walletPrivateKey = process.env.WALLET_PRIVATE_KEY ?? "";
+const walletPrivateKey = process.env.WALLET_PRIVATE_KEY_LOCALHOST ?? "0x".padEnd(66, "0");
 
 const config: HardhatUserConfig = {
   solidity: "0.8.28",
