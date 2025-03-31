@@ -1,7 +1,19 @@
 {
   "name": "hardhat-project",
+  "version": "0.1.0",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "test:coverage": "npx hardhat coverage",
+    "deploy": "npx hardhat ignition deploy ./ignition/modules/Cafereum.ts",
+    "buy-coffee": "npx hardhat run scripts/buy-coffee.ts",
+    "check-contract-balance": "npx hardhat run scripts/check-contract-balance.ts",
+    "withdraw-contract-balance": "npx hardhat run scripts/withdraw-contract-balance.ts"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.22.19"
+    "ethers": "^6.13.5",
+    "hardhat": "^2.22.19",
+    "dotenv": "^16.4.7"
   }
 }

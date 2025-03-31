@@ -2,8 +2,10 @@
 // Learn more about it at https://hardhat.org/ignition
 
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
+import hre  from 'hardhat';
+import { ethers } from "ethers";
 
-const DEFAULT_COFFEE_PRICE = 1_000_000_000n; // 1 GWEI
+const DEFAULT_COFFEE_PRICE = hre.ethers.parseEther("0.01");
 
 const CafereumModule = buildModule("CafereumModule", (m) => {
   const coffeePrice = m.getParameter("coffeePrice", DEFAULT_COFFEE_PRICE);
