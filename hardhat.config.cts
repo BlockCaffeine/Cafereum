@@ -8,12 +8,15 @@ const walletPrivateKey = process.env.WALLET_PRIVATE_KEY_LOCALHOST ?? "0x".padEnd
 const config: HardhatUserConfig = {
   solidity: "0.8.28",
   networks: {
-    uniMa: {
-      url: "https://fortuna.informatik.uni-mannheim.de:8506",
-      chainId: 1337,
-      accounts: [walletPrivateKey],
+    uniMaBlockchain: {
+      url: "http://134.155.52.185:32779",
+      chainId: 585858,
+      accounts: [
+        walletPrivateKey
+      ],
     }
   }
 };
 
 export default config;
+
