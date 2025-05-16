@@ -5,7 +5,7 @@ contract Cafereum {
     uint public coffeePrice;
     address payable public owner;
 
-    event CoffeePurchased(address buyer, uint amount, uint when);
+    event ProductPurchased(string productType, string productStrength);
 
     constructor(uint _coffeePrice) {
         require(_coffeePrice > 0, "Coffee price should be greater than zero");
@@ -14,10 +14,31 @@ contract Cafereum {
         owner = payable(msg.sender);
     }
 
-    function buyCoffee() public payable {
+    function buyProduct(
+        string memory productType,
+        string memory productStrength
+    ) public payable {
         require(msg.value == coffeePrice, "Incorrect amount sent");
 
-        emit CoffeePurchased(msg.sender, msg.value, block.timestamp);
+        // Validate productType
+        require(
+            compareStrings(productType, "SingleCoffee") ||
+                compareStrings(productType, "DoubleCoffee") ||
+                compareStrings(productType, "SingleEspresso") ||
+                compareStrings(productType, "DoubleEspresso"),
+            "Invalid product type"
+        );
+
+        // Validate productStrength
+        require(
+            compareStrings(productStrength, "Mild") ||
+                compareStrings(productStrength, "Normal") ||
+                compareStrings(productStrength, "Strong") ||
+                compareStrings(productStrength, "Extra"),
+            "Invalid product strength"
+        );
+
+        emit ProductPurchased(productType, productStrength);
     }
 
     function getBalance() public view returns (uint) {
@@ -29,5 +50,9 @@ contract Cafereum {
 
         uint amount = address(this).balance;
         owner.transfer(amount);
+    }
+
+    function compareStrings(string memory a, string memory b) internal pure returns (bool) {
+        return (keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b)));
     }
 }
