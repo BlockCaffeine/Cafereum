@@ -208,6 +208,28 @@ describe('Cafereum', function () {
       const { cafereum } = await loadFixture(deployCafereumFixture);
       expect(await cafereum.getProductPrice('UnknownProduct')).to.equal(0);
     });
+    it('Should return correct product names and prices', async function () {
+      const {
+        cafereum,
+        SINGLE_COFFEE_PRICE,
+        DOUBLE_COFFEE_PRICE,
+        SINGLE_ESPRESSO_PRICE,
+        DOUBLE_ESPRESSO_PRICE,
+      } = await loadFixture(deployCafereumFixture);
+      const [names, prices] = await cafereum.getProductNamesAndPrices();
+      expect(names).to.deep.equal([
+        'SingleCoffee',
+        'DoubleCoffee',
+        'SingleEspresso',
+        'DoubleEspresso',
+      ]);
+      expect(prices.map((p: any) => p.toString())).to.deep.equal([
+        SINGLE_COFFEE_PRICE.toString(),
+        DOUBLE_COFFEE_PRICE.toString(),
+        SINGLE_ESPRESSO_PRICE.toString(),
+        DOUBLE_ESPRESSO_PRICE.toString(),
+      ]);
+    });
   });
 
   describe('Helper Functions', function () {

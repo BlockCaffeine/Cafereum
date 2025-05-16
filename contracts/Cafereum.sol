@@ -49,6 +49,23 @@ contract Cafereum {
         return productPrices[productType];
     }
 
+    function getProductNamesAndPrices() public view returns (string[] memory, uint[] memory) {
+        string[] memory names = new string[](4);
+        uint[] memory prices = new uint[](4);
+
+        names[0] = "SingleCoffee";
+        names[1] = "DoubleCoffee";
+        names[2] = "SingleEspresso";
+        names[3] = "DoubleEspresso";
+
+        prices[0] = productPrices["SingleCoffee"];
+        prices[1] = productPrices["DoubleCoffee"];
+        prices[2] = productPrices["SingleEspresso"];
+        prices[3] = productPrices["DoubleEspresso"];
+
+        return (names, prices);
+    }
+
     function buyProduct(string memory productType, string memory productStrength) public payable {
         require(isValidProductType(productType), "Invalid product type");
         require(isValidProductStrength(productStrength), "Invalid product strength");
