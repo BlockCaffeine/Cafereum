@@ -3,6 +3,9 @@ import 'dotenv/config';
 import { wallet, provider, contract } from './fixtures';
 const ethers = hre.ethers;
 
+const PRODUCT_TYPE = "SingleCoffee"; // valid: SingleCoffee, DoubleCoffee, SingleEspresso, DoubleEspresso
+const PRODUCT_STRENGTH = "Normal"; // valid: Mild, Normal, Strong, Extra
+
 async function main() {
   // Get wallet address and balance
   console.log('Wallet address:', wallet.address);
@@ -10,9 +13,13 @@ async function main() {
   const balanceBefore = await provider.getBalance(wallet.address);
   console.log('Wallet balance before transaction:', ethers.formatEther(balanceBefore), 'UMETH');
 
-  // Call the buyCoffee function
-  const tx = await contract.buyCoffee({
-    value: ethers.parseEther('0.01'),
+  // Get the current coffee price from the contract
+  const coffeePrice = await contract.getProductPrice(PRODUCT_TYPE);
+  console.log('Current coffee price:', ethers.formatEther(coffeePrice), 'UMETH');
+
+  // Call the buyProduct function with valid arguments and correct price
+  const tx = await contract.buyProduct(PRODUCT_TYPE, PRODUCT_STRENGTH, {
+    value: coffeePrice,
   });
 
   console.log('Transaction hash:', tx.hash);

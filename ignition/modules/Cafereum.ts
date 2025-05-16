@@ -3,14 +3,19 @@
 
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import hre  from 'hardhat';
-import { ethers } from "ethers";
 
-const DEFAULT_COFFEE_PRICE = hre.ethers.parseEther("0.01");
+const DEFAULT_SINGLE_COFFEE_PRICE = hre.ethers.parseEther("0.01");
+const DEFAULT_DOUBLE_COFFEE_PRICE = hre.ethers.parseEther("0.018");
+const DEFAULT_SINGLE_ESPRESSO_PRICE = hre.ethers.parseEther("0.012");
+const DEFAULT_DOUBLE_ESPRESSO_PRICE = hre.ethers.parseEther("0.02");
 
 const CafereumModule = buildModule("CafereumModule", (m) => {
-  const coffeePrice = m.getParameter("coffeePrice", DEFAULT_COFFEE_PRICE);
+  const singleCoffeePrice = m.getParameter("singleCoffeePrice", DEFAULT_SINGLE_COFFEE_PRICE);
+  const doubleCoffeePrice = m.getParameter("doubleCoffeePrice", DEFAULT_DOUBLE_COFFEE_PRICE);
+  const singleEspressoPrice = m.getParameter("singleEspressoPrice", DEFAULT_SINGLE_ESPRESSO_PRICE);
+  const doubleEspressoPrice = m.getParameter("doubleEspressoPrice", DEFAULT_DOUBLE_ESPRESSO_PRICE);
 
-  const cafereum = m.contract("Cafereum", [coffeePrice]);
+  const cafereum = m.contract("Cafereum", [singleCoffeePrice, doubleCoffeePrice, singleEspressoPrice, doubleEspressoPrice]);
 
   return { cafereum };
 });

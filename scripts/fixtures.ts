@@ -7,8 +7,7 @@ const walletPrivateKey = process.env.WALLET_PRIVATE_KEY_LOCALHOST;
 
 if (!walletPrivateKey) throw new Error('PRIVATE_KEY is not defined in the environment variables');
 
-// const contractAddress = process.env.SMART_CONTRACT_ADDRESS;
-const contractAddress = process.env.SMART_CONTRACT_ADDRESS_LOCALHOST;
+const contractAddress = process.env.SMART_CONTRACT_ADDRESS;
 
 if (!contractAddress) throw new Error('SMART_CONTRACT_ADDRESS is not defined in the environment variables');
 
