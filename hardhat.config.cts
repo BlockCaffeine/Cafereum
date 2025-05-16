@@ -2,7 +2,7 @@ import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
 import 'dotenv/config';
 
-const walletPrivateKey = process.env.WALLET_PRIVATE_KEY ?? "";
+const walletPrivateKey = process.env.WALLET_PRIVATE_KEY ?? "0x".padEnd(66, "0");;
 
 const config: HardhatUserConfig = {
   solidity: '0.8.28',
