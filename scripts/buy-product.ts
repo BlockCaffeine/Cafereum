@@ -14,12 +14,12 @@ async function main() {
   console.log('Wallet balance before transaction:', ethers.formatEther(balanceBefore), 'UMETH');
 
   // Get the current coffee price from the contract
-  const coffeePrice = await contract.getProductPrice(PRODUCT_TYPE);
-  console.log('Current coffee price:', ethers.formatEther(coffeePrice), 'UMETH');
+  const productPrice = await contract.getProductPrice(PRODUCT_TYPE);
+  console.log('Current coffee price:', ethers.formatEther(productPrice), 'UMETH');
 
   // Call the buyProduct function with valid arguments and correct price
   const tx = await contract.buyProduct(PRODUCT_TYPE, PRODUCT_STRENGTH, {
-    value: coffeePrice,
+    value: productPrice,
   });
 
   console.log('Transaction hash:', tx.hash);

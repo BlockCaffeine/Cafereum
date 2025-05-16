@@ -2,8 +2,7 @@ import hre from 'hardhat';
 import 'dotenv/config';
 const ethers = hre.ethers;
 
-// const walletPrivateKey = process.env.WALLET_PRIVATE_KEY;
-const walletPrivateKey = process.env.WALLET_PRIVATE_KEY_LOCALHOST;
+const walletPrivateKey = process.env.WALLET_PRIVATE_KEY;
 
 if (!walletPrivateKey) throw new Error('PRIVATE_KEY is not defined in the environment variables');
 
