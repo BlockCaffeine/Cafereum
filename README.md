@@ -40,11 +40,11 @@ npx hardhat coverage
 - (Un)comment the right environment variables in the `./hardhat.config.cts` file
 - Run the deployment script
 ```bash
-npx hardhat ignition deploy ./ignition/modules/Cafereum.ts --network uniMa
+npx hardhat ignition deploy ./ignition/modules/Cafereum.ts --network uniMaBlockchain
 ```
 or using the npm script
 ```bash
-npm run deploy -- --network uniMa
+npm run deploy -- --network uniMaBlockchain
 ```
 
 ## Scripts
@@ -53,13 +53,15 @@ npm run deploy -- --network uniMa
 2. (Un)comment the right environment variables in the `./scripts/fixtures.ts` file
 3. Run the scripts
 ```bash
-npx hardhat run ./scripts/buy-coffee.ts --network uniMa
-npx hardhat run ./scripts/check-contract-balance.ts --network uniMa
-npx hardhat run ./scripts/withdraw-contract-balance.ts --network uniMa
+npx hardhat run ./scripts/buy-product.ts --network uniMaBlockchain
+npx hardhat run ./scripts/check-contract-balance.ts --network uniMaBlockchain
+npx hardhat run ./scripts/withdraw-contract-balance.ts --network uniMaBlockchain
+npx hardhat run ./scripts/set-product-price.ts --network uniMaBlockchain
 ```
-or using the npm scripts
+or using the npm scripts (if defined)
 ```bash
-npm run buy-coffee -- --network uniMa
-npm run check-contract-balance -- --network uniMa
-npm run withdraw-contract-balance -- --network uniMa
+npm run buy-product -- --network uniMaBlockchain
+npm run check-contract-balance -- --network uniMaBlockchain
+npm run withdraw-contract-balance -- --network uniMaBlockchain
+npm run set-product-price -- --network uniMaBlockchain
 ```
