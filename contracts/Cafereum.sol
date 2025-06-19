@@ -17,6 +17,9 @@ contract Cafereum is ERC721, Ownable {
     // Track current top buyers
     address public topCoffeeBuyer;
     address public topEspressoBuyer;
+    
+    // Flag to track internal transfers
+    bool private _internalTransfer;
 
     event ProductPurchased(string productType, string productStrength);
     event TopCoffeeBuyerChanged(address previousBuyer, address newBuyer, uint purchaseCount);
@@ -143,10 +146,8 @@ contract Cafereum is ERC721, Ownable {
         require(isValidProduct(product), "Invalid product");
         if (compareStrings(product, "Coffee")) {
             return coffeePurchases[msg.sender];
-        } else if (compareStrings(product, "Espresso")) {
-            return espressoPurchases[msg.sender];
         } else {
-            revert("Invalid product type");
+            return espressoPurchases[msg.sender];
         }
     }
 
@@ -189,13 +190,16 @@ contract Cafereum is ERC721, Ownable {
      * NFT functions
      */
 
-    // Override transfer functions to prevent transfers of reward NFTs
+    // Override transfer functions to prevent external transfers of reward NFTs
     function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
         address from = _ownerOf(tokenId);
         
-        // Only allow the contract to transfer reward NFTs
+        // For reward NFTs, only allow minting or internal contract operations
         if (tokenId == TOP_COFFEE_BUYER_TOKEN_ID || tokenId == TOP_ESPRESSO_BUYER_TOKEN_ID) {
-            require(auth == address(this) || from == address(0), "Reward NFTs can only be transferred by contract");
+            // Allow minting (from == address(0)) or internal transfers
+            if (from != address(0) && !_internalTransfer) {
+                require(false, "Reward NFTs can only be transferred by contract");
+            }
         }
         
         return super._update(to, tokenId, auth);
@@ -210,9 +214,17 @@ contract Cafereum is ERC721, Ownable {
         uint currentBuyerPurchases = coffeePurchases[msg.sender];
         uint topBuyerPurchases = topCoffeeBuyer != address(0) ? coffeePurchases[topCoffeeBuyer] : 0;
 
-        // Only update if the current buyer has more purchases than the current top buyer
-        if (currentBuyerPurchases > topBuyerPurchases) {
+        // Special case: if the current buyer is already the top buyer, always emit event for their continued dominance
+        if (msg.sender == topCoffeeBuyer && topCoffeeBuyer != address(0)) {
+            emit TopCoffeeBuyerChanged(msg.sender, msg.sender, currentBuyerPurchases);
+        }
+        // Update if the current buyer has more purchases than the current top buyer
+        // OR if they have equal purchases and are not already the top buyer (tie-breaker: most recent wins)
+        else if (currentBuyerPurchases > topBuyerPurchases || 
+            (currentBuyerPurchases == topBuyerPurchases && msg.sender != topCoffeeBuyer && topBuyerPurchases > 0)) {
             address previousTopBuyer = topCoffeeBuyer;
+            
+            _internalTransfer = true;
             
             // Transfer NFT from previous top buyer back to contract (if exists)
             if (previousTopBuyer != address(0)) {
@@ -221,6 +233,9 @@ contract Cafereum is ERC721, Ownable {
             
             // Transfer NFT to new top buyer
             _transfer(address(this), msg.sender, TOP_COFFEE_BUYER_TOKEN_ID);
+            
+            _internalTransfer = false;
+            
             topCoffeeBuyer = msg.sender;
             
             emit TopCoffeeBuyerChanged(previousTopBuyer, msg.sender, currentBuyerPurchases);
@@ -232,9 +247,17 @@ contract Cafereum is ERC721, Ownable {
         uint currentBuyerPurchases = espressoPurchases[msg.sender];
         uint topBuyerPurchases = topEspressoBuyer != address(0) ? espressoPurchases[topEspressoBuyer] : 0;
 
-        // Only update if the current buyer has more purchases than the current top buyer
-        if (currentBuyerPurchases > topBuyerPurchases) {
+        // Special case: if the current buyer is already the top buyer, always emit event for their continued dominance
+        if (msg.sender == topEspressoBuyer && topEspressoBuyer != address(0)) {
+            emit TopEspressoBuyerChanged(msg.sender, msg.sender, currentBuyerPurchases);
+        }
+        // Update if the current buyer has more purchases than the current top buyer
+        // OR if they have equal purchases and are not already the top buyer (tie-breaker: most recent wins)
+        else if (currentBuyerPurchases > topBuyerPurchases || 
+            (currentBuyerPurchases == topBuyerPurchases && msg.sender != topEspressoBuyer && topBuyerPurchases > 0)) {
             address previousTopBuyer = topEspressoBuyer;
+            
+            _internalTransfer = true;
             
             // Transfer NFT from previous top buyer back to contract (if exists)
             if (previousTopBuyer != address(0)) {
@@ -243,6 +266,9 @@ contract Cafereum is ERC721, Ownable {
             
             // Transfer NFT to new top buyer
             _transfer(address(this), msg.sender, TOP_ESPRESSO_BUYER_TOKEN_ID);
+            
+            _internalTransfer = false;
+            
             topEspressoBuyer = msg.sender;
             
             emit TopEspressoBuyerChanged(previousTopBuyer, msg.sender, currentBuyerPurchases);
