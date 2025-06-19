@@ -1,5 +1,6 @@
 import { loadFixture, time } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { expect } from 'chai';
+import { ethers } from 'hardhat';
 import hre from 'hardhat';
 
 // Updated test suite for new Cafereum contract
@@ -310,6 +311,28 @@ describe('Cafereum', function () {
       await expect(
         cafereum.buyProduct('singlecoffee', 'Normal', { value: SINGLE_COFFEE_PRICE })
       ).to.be.revertedWith('Invalid product type');
+    });
+  });
+
+  describe('getAllCoffeePurchases', function () {
+    it('should return all coffee buyers with their respective purchase counts', async function () {
+      const { cafereum } = await loadFixture(deployCafereumFixture);
+  
+      // Simulate coffee purchases
+      const [buyer1, buyer2, buyer3] = await ethers.getSigners();
+  
+      const singleCoffeePrice = await cafereum.getProductPrice("SingleCoffee");
+  
+      await cafereum.connect(buyer1).buyProduct("SingleCoffee", "Normal", { value: singleCoffeePrice }); // Buyer 1 purchases 1 coffee
+      await cafereum.connect(buyer2).buyProduct("SingleCoffee", "Normal", { value: singleCoffeePrice }); // Buyer 2 purchases 1 coffee
+      await cafereum.connect(buyer3).buyProduct("SingleCoffee", "Normal", { value: singleCoffeePrice }); // Buyer 3 purchases 1 coffee
+  
+      // Call getAllCoffeePurchases
+      const [buyers, counts] = await cafereum.getAllCoffeePurchases();
+  
+      // Verify the buyers and counts
+      expect(buyers).to.deep.equal([buyer1.address, buyer2.address, buyer3.address]);
+      expect(counts).to.deep.equal([1, 1, 1]);
     });
   });
 

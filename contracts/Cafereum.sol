@@ -6,9 +6,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Cafereum is ERC721, Ownable {
     mapping(string => uint) public productPrices;
-
+    mapping(address => uint) public coffeePurchases_new;
     mapping(address => uint) public coffeePurchases;
     mapping(address => uint) public espressoPurchases;
+
+    address[] private coffeeBuyers; // Array to track coffee buyers
+    // address payable public owner;
     
     // Top buyer reward NFTs (special token IDs)
     uint256 public constant TOP_COFFEE_BUYER_TOKEN_ID = 1111;
@@ -94,6 +97,7 @@ contract Cafereum is ERC721, Ownable {
         // Update purchase counts
         if (compareStrings(productType, "SingleCoffee") || compareStrings(productType, "DoubleCoffee")) {
             coffeePurchases[msg.sender]++;
+            recordCoffeePurchase(msg.sender, 1);
             // Check and update top coffee buyer automatically
             _checkAndUpdateTopCoffeeBuyer();
         } else if (compareStrings(productType, "SingleEspresso") || compareStrings(productType, "DoubleEspresso")) {
@@ -141,6 +145,28 @@ contract Cafereum is ERC721, Ownable {
      * - getTopBuyers: Get the current top buyers for coffee and espresso
      * - getTopBuyersWithCounts: Get the top buyers and their purchase counts
      */
+
+    // Function to record coffee purchases
+    function recordCoffeePurchase(address buyer, uint count) internal {
+        if (coffeePurchases_new[buyer] == 0) {
+            coffeeBuyers.push(buyer); // Add buyer to the list if not already present
+        }
+        coffeePurchases_new[buyer] += count;
+    }
+
+    // Function to get all coffee purchases with their respective counts
+    function getAllCoffeePurchases() public view returns (address[] memory buyers, uint[] memory counts) {
+        uint length = coffeeBuyers.length;
+        buyers = new address[](length);
+        counts = new uint[](length);
+
+        for (uint i = 0; i < length; i++) {
+            buyers[i] = coffeeBuyers[i];
+            counts[i] = coffeePurchases_new[coffeeBuyers[i]];
+        }
+
+        return (buyers, counts);
+    }
 
     function getProductPurchaseCount(string memory product) public view returns (uint) {
         require(isValidProduct(product), "Invalid product");
