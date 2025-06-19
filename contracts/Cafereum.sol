@@ -1,20 +1,33 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-contract Cafereum {
-    address payable public owner;
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
+contract Cafereum is ERC721, Ownable {
     mapping(string => uint) public productPrices;
 
+    mapping(address => uint) public coffeePurchases;
+    mapping(address => uint) public espressoPurchases;
+    
+    // Top buyer reward NFTs (special token IDs)
+    uint256 public constant TOP_COFFEE_BUYER_TOKEN_ID = 1111;
+    uint256 public constant TOP_ESPRESSO_BUYER_TOKEN_ID = 2222;
+    
+    // Track current top buyers
+    address public topCoffeeBuyer;
+    address public topEspressoBuyer;
+
     event ProductPurchased(string productType, string productStrength);
+    event TopCoffeeBuyerChanged(address previousBuyer, address newBuyer, uint purchaseCount);
+    event TopEspressoBuyerChanged(address previousBuyer, address newBuyer, uint purchaseCount);
 
     constructor(
         uint singleCoffeePrice,
         uint doubleCoffeePrice,
         uint singleEspressoPrice,
         uint doubleEspressoPrice
-    ) {
-        owner = payable(msg.sender);
+    ) ERC721("Cafereum", "CAF") Ownable(msg.sender) {
 
         require(
             isValidProductPrice(singleCoffeePrice),
@@ -37,6 +50,10 @@ contract Cafereum {
         productPrices["DoubleCoffee"] = doubleCoffeePrice;
         productPrices["SingleEspresso"] = singleEspressoPrice;
         productPrices["DoubleEspresso"] = doubleEspressoPrice;
+        
+        // Mint the reward NFTs to the contract at deployment
+        _safeMint(address(this), TOP_COFFEE_BUYER_TOKEN_ID);
+        _safeMint(address(this), TOP_ESPRESSO_BUYER_TOKEN_ID);
     }
     /*
      * Product functions
@@ -71,6 +88,17 @@ contract Cafereum {
         require(isValidProductStrength(productStrength), "Invalid product strength");
         require(msg.value == productPrices[productType], "Incorrect amount sent");
 
+        // Update purchase counts
+        if (compareStrings(productType, "SingleCoffee") || compareStrings(productType, "DoubleCoffee")) {
+            coffeePurchases[msg.sender]++;
+            // Check and update top coffee buyer automatically
+            _checkAndUpdateTopCoffeeBuyer();
+        } else if (compareStrings(productType, "SingleEspresso") || compareStrings(productType, "DoubleEspresso")) {
+            espressoPurchases[msg.sender]++;
+            // Check and update top espresso buyer automatically
+            _checkAndUpdateTopEspressoBuyer();
+        }
+
         emit ProductPurchased(productType, productStrength);
     }
 
@@ -79,10 +107,10 @@ contract Cafereum {
      * - setProductPrice: Set the price of a product
      * - getBalance: Get the contract balance
      * - withdraw: Withdraw the contract balance
+     * - newOwner: Transfer ownership of the contract
      */
 
-    function setProductPrice(string memory productType, uint price) public {
-        require(msg.sender == owner, "You are not the owner");
+    function setProductPrice(string memory productType, uint price) public onlyOwner {
         require(isValidProductType(productType), "Invalid product type");
         require(isValidProductPrice(price), "Price must be greater than zero");
         productPrices[productType] = price;
@@ -92,22 +120,144 @@ contract Cafereum {
         return address(this).balance;
     }
 
-    function withdraw() public {
-        require(msg.sender == owner, "You are not the owner");
-
+    function withdraw() public onlyOwner {
         uint amount = address(this).balance;
-        owner.transfer(amount);
+        payable(owner()).transfer(amount);
+    }
+
+    function newOwner(address newAddress) public onlyOwner {
+        transferOwnership(newAddress);
+    }
+
+    /*
+     * Statistics functions
+     * - getProductPurchaseCount: Get the number of purchases for a specific product
+     * - getTotalPurchases: Get the total number of purchases for an address
+     * - getCoffeePurchases: Get the number of coffee purchases for an address
+     * - getEspressoPurchases: Get the number of espresso purchases for an address
+     * - getTopBuyers: Get the current top buyers for coffee and espresso
+     * - getTopBuyersWithCounts: Get the top buyers and their purchase counts
+     */
+
+    function getProductPurchaseCount(string memory product) public view returns (uint) {
+        require(isValidProduct(product), "Invalid product");
+        if (compareStrings(product, "Coffee")) {
+            return coffeePurchases[msg.sender];
+        } else if (compareStrings(product, "Espresso")) {
+            return espressoPurchases[msg.sender];
+        } else {
+            revert("Invalid product type");
+        }
+    }
+
+    // Public function to get total purchases for an address
+    function getTotalPurchases(address buyer) public view returns (uint) {
+        return coffeePurchases[buyer] + espressoPurchases[buyer];
+    }
+
+    // Public function to get coffee purchases for an address
+    function getCoffeePurchases(address buyer) public view returns (uint) {
+        return coffeePurchases[buyer];
+    }
+
+    // Public function to get espresso purchases for an address
+    function getEspressoPurchases(address buyer) public view returns (uint) {
+        return espressoPurchases[buyer];
+    }
+
+    // Function to check who currently holds the reward NFTs
+    function getTopBuyers() public view returns (address coffee, address espresso) {
+        return (topCoffeeBuyer, topEspressoBuyer);
+    }
+
+    // Function to get the top buyers and their purchase counts
+    function getTopBuyersWithCounts() public view returns (
+        address coffeeBuyer, 
+        uint coffeePurchases_, 
+        address espressoBuyer, 
+        uint espressoPurchases_
+    ) {
+        return (
+            topCoffeeBuyer, 
+            topCoffeeBuyer != address(0) ? coffeePurchases[topCoffeeBuyer] : 0,
+            topEspressoBuyer,
+            topEspressoBuyer != address(0) ? espressoPurchases[topEspressoBuyer] : 0
+        );
+    }
+
+    /*
+     * NFT functions
+     */
+
+    // Override transfer functions to prevent transfers of reward NFTs
+    function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
+        address from = _ownerOf(tokenId);
+        
+        // Only allow the contract to transfer reward NFTs
+        if (tokenId == TOP_COFFEE_BUYER_TOKEN_ID || tokenId == TOP_ESPRESSO_BUYER_TOKEN_ID) {
+            require(auth == address(this) || from == address(0), "Reward NFTs can only be transferred by contract");
+        }
+        
+        return super._update(to, tokenId, auth);
     }
 
     /*
      * Internal helper functions
      */
 
+    // Internal function to check and update top coffee buyer
+    function _checkAndUpdateTopCoffeeBuyer() internal {
+        uint currentBuyerPurchases = coffeePurchases[msg.sender];
+        uint topBuyerPurchases = topCoffeeBuyer != address(0) ? coffeePurchases[topCoffeeBuyer] : 0;
+
+        // Only update if the current buyer has more purchases than the current top buyer
+        if (currentBuyerPurchases > topBuyerPurchases) {
+            address previousTopBuyer = topCoffeeBuyer;
+            
+            // Transfer NFT from previous top buyer back to contract (if exists)
+            if (previousTopBuyer != address(0)) {
+                _transfer(previousTopBuyer, address(this), TOP_COFFEE_BUYER_TOKEN_ID);
+            }
+            
+            // Transfer NFT to new top buyer
+            _transfer(address(this), msg.sender, TOP_COFFEE_BUYER_TOKEN_ID);
+            topCoffeeBuyer = msg.sender;
+            
+            emit TopCoffeeBuyerChanged(previousTopBuyer, msg.sender, currentBuyerPurchases);
+        }
+    }
+
+    // Internal function to check and update top espresso buyer
+    function _checkAndUpdateTopEspressoBuyer() internal {
+        uint currentBuyerPurchases = espressoPurchases[msg.sender];
+        uint topBuyerPurchases = topEspressoBuyer != address(0) ? espressoPurchases[topEspressoBuyer] : 0;
+
+        // Only update if the current buyer has more purchases than the current top buyer
+        if (currentBuyerPurchases > topBuyerPurchases) {
+            address previousTopBuyer = topEspressoBuyer;
+            
+            // Transfer NFT from previous top buyer back to contract (if exists)
+            if (previousTopBuyer != address(0)) {
+                _transfer(previousTopBuyer, address(this), TOP_ESPRESSO_BUYER_TOKEN_ID);
+            }
+            
+            // Transfer NFT to new top buyer
+            _transfer(address(this), msg.sender, TOP_ESPRESSO_BUYER_TOKEN_ID);
+            topEspressoBuyer = msg.sender;
+            
+            emit TopEspressoBuyerChanged(previousTopBuyer, msg.sender, currentBuyerPurchases);
+        }
+    }
+
     function isValidProductType(string memory productType) internal pure returns (bool) {
         return (compareStrings(productType, "SingleCoffee") ||
             compareStrings(productType, "DoubleCoffee") ||
             compareStrings(productType, "SingleEspresso") ||
             compareStrings(productType, "DoubleEspresso"));
+    }
+
+    function isValidProduct(string memory product) internal pure returns (bool) {
+        return (compareStrings(product, "Coffee") || compareStrings(product, "Espresso"));
     }
 
     function isValidProductStrength(string memory productStrength) internal pure returns (bool) {
