@@ -6,10 +6,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Cafereum is ERC721, Ownable {
     mapping(string => uint) public productPrices;
-    mapping(address => uint) public coffeePurchases_new;
-    mapping(address => uint) public coffeePurchases;
-    mapping(address => uint) public espressoPurchases;
+    
+    // mapping(address => uint) public coffeePurchases;
+    mapping(address => uint) public espressoPurchases; // Dictionary to track espresso purchases per buyer
+    address[] private espressoBuyers; // Array to track espresso buyers
 
+    mapping(address => uint) public coffeePurchases; // Dictionary to track coffee purchases per buyer
     address[] private coffeeBuyers; // Array to track coffee buyers
     // address payable public owner;
     
@@ -96,12 +98,13 @@ contract Cafereum is ERC721, Ownable {
 
         // Update purchase counts
         if (compareStrings(productType, "SingleCoffee") || compareStrings(productType, "DoubleCoffee")) {
-            coffeePurchases[msg.sender]++;
+            // coffeePurchases[msg.sender]++;
             recordCoffeePurchase(msg.sender, 1);
             // Check and update top coffee buyer automatically
             _checkAndUpdateTopCoffeeBuyer();
         } else if (compareStrings(productType, "SingleEspresso") || compareStrings(productType, "DoubleEspresso")) {
-            espressoPurchases[msg.sender]++;
+            // espressoPurchases[msg.sender]++;
+            recordEspressoPurchase(msg.sender, 1);
             // Check and update top espresso buyer automatically
             _checkAndUpdateTopEspressoBuyer();
         }
@@ -148,10 +151,10 @@ contract Cafereum is ERC721, Ownable {
 
     // Function to record coffee purchases
     function recordCoffeePurchase(address buyer, uint count) internal {
-        if (coffeePurchases_new[buyer] == 0) {
+        if (coffeePurchases[buyer] == 0) {
             coffeeBuyers.push(buyer); // Add buyer to the list if not already present
         }
-        coffeePurchases_new[buyer] += count;
+        coffeePurchases[buyer] += count;
     }
 
     // Function to get all coffee purchases with their respective counts
@@ -162,7 +165,29 @@ contract Cafereum is ERC721, Ownable {
 
         for (uint i = 0; i < length; i++) {
             buyers[i] = coffeeBuyers[i];
-            counts[i] = coffeePurchases_new[coffeeBuyers[i]];
+            counts[i] = coffeePurchases[coffeeBuyers[i]];
+        }
+
+        return (buyers, counts);
+    }
+
+    // Function to record espresso purchases
+    function recordEspressoPurchase(address buyer, uint count) internal {
+        if (espressoPurchases[buyer] == 0) {
+            espressoBuyers.push(buyer); // Add buyer to the list if not already present
+        }
+        espressoPurchases[buyer] += count;
+    }
+
+    // Function to get all espresso purchases with their respective counts
+    function getAllEspressoPurchases() public view returns (address[] memory buyers, uint[] memory counts) {
+        uint length = espressoBuyers.length;
+        buyers = new address[](length);
+        counts = new uint[](length);
+
+        for (uint i = 0; i < length; i++) {
+            buyers[i] = espressoBuyers[i];
+            counts[i] = espressoPurchases[espressoBuyers[i]];
         }
 
         return (buyers, counts);

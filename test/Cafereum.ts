@@ -322,10 +322,11 @@ describe('Cafereum', function () {
       const [buyer1, buyer2, buyer3] = await ethers.getSigners();
   
       const singleCoffeePrice = await cafereum.getProductPrice("SingleCoffee");
+      const doubleCoffeePrice = await cafereum.getProductPrice("DoubleCoffee");
   
       await cafereum.connect(buyer1).buyProduct("SingleCoffee", "Normal", { value: singleCoffeePrice }); // Buyer 1 purchases 1 coffee
-      await cafereum.connect(buyer2).buyProduct("SingleCoffee", "Normal", { value: singleCoffeePrice }); // Buyer 2 purchases 1 coffee
-      await cafereum.connect(buyer3).buyProduct("SingleCoffee", "Normal", { value: singleCoffeePrice }); // Buyer 3 purchases 1 coffee
+      await cafereum.connect(buyer2).buyProduct("DoubleCoffee", "Normal", { value: doubleCoffeePrice }); // Buyer 2 purchases 1 coffee
+      await cafereum.connect(buyer3).buyProduct("DoubleCoffee", "Extra", { value: doubleCoffeePrice }); // Buyer 3 purchases 1 coffee
   
       // Call getAllCoffeePurchases
       const [buyers, counts] = await cafereum.getAllCoffeePurchases();
@@ -333,6 +334,40 @@ describe('Cafereum', function () {
       // Verify the buyers and counts
       expect(buyers).to.deep.equal([buyer1.address, buyer2.address, buyer3.address]);
       expect(counts).to.deep.equal([1, 1, 1]);
+    });
+  });
+
+  describe('getAllEspressoPurchases', function () {
+    it('should return all espresso buyers with their respective purchase counts', async function () {
+      const { cafereum } = await loadFixture(deployCafereumFixture);
+  
+      // Simulate espresso purchases
+      const [buyer1, buyer2, buyer3] = await ethers.getSigners();
+  
+      const singleEspressoPrice = await cafereum.getProductPrice("SingleEspresso");
+      const doubleEspressoPrice = await cafereum.getProductPrice("DoubleEspresso");
+
+      await cafereum.connect(buyer1).buyProduct("SingleEspresso", "Normal", { value: singleEspressoPrice }); // Buyer 1 purchases 1 espresso
+      await cafereum.connect(buyer2).buyProduct("DoubleEspresso", "Normal", { value: doubleEspressoPrice }); // Buyer 2 purchases 1 espresso
+      await cafereum.connect(buyer3).buyProduct("DoubleEspresso", "Extra", { value: doubleEspressoPrice }); // Buyer 3 purchases 1 espresso
+  
+      // Call getAllEspressoPurchases
+      const [buyers, counts] = await cafereum.getAllEspressoPurchases();
+  
+      // Verify the buyers and counts
+      expect(buyers).to.deep.equal([buyer1.address, buyer2.address, buyer3.address]);
+      expect(counts).to.deep.equal([1, 1, 1]);
+    });
+  
+    it('should return empty arrays if no espresso purchases have been made', async function () {
+      const { cafereum } = await loadFixture(deployCafereumFixture);
+  
+      // Call getAllEspressoPurchases without any purchases
+      const [buyers, counts] = await cafereum.getAllEspressoPurchases();
+  
+      // Verify the buyers and counts are empty
+      expect(buyers).to.deep.equal([]);
+      expect(counts).to.deep.equal([]);
     });
   });
 
