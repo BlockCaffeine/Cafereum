@@ -220,6 +220,31 @@ contract Cafereum is ERC721, Ownable {
         return (degree, object);
     }
 
+        function getMostFrequentlyOrderedCategory() public view returns (string memory mostOrderedCategory, uint orderCount) {
+        // Calculate total coffee purchases
+        uint totalCoffeePurchases = 0;
+        for (uint i = 0; i < coffeeBuyers.length; i++) {
+            totalCoffeePurchases += coffeePurchases[coffeeBuyers[i]];
+        }
+
+        // Calculate total espresso purchases
+        uint totalEspressoPurchases = 0;
+        for (uint i = 0; i < espressoBuyers.length; i++) {
+            totalEspressoPurchases += espressoPurchases[espressoBuyers[i]];
+        }
+
+        // Compare coffee and espresso purchases
+        if (totalCoffeePurchases >= totalEspressoPurchases) {
+            mostOrderedCategory = "Coffee";
+            orderCount = totalCoffeePurchases;
+        } else {
+            mostOrderedCategory = "Espresso";
+            orderCount = totalEspressoPurchases;
+        }
+
+        return (mostOrderedCategory, orderCount);
+    }
+
     function getProductPurchaseCount(string memory product) public view returns (uint) {
         require(isValidProduct(product), "Invalid product");
         if (compareStrings(product, "Coffee")) {
