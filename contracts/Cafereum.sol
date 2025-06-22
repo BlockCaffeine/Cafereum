@@ -193,6 +193,34 @@ contract Cafereum is ERC721, Ownable {
         return (buyers, counts);
     }
 
+    // Function to map coffee purchases to the degree (number of objects) and object name
+    function mapCoffeeToObjects(address buyer) public view returns (uint degree, string memory object) {
+        uint coffeeCount = coffeePurchases[buyer]; // Get the number of coffees purchased by the buyer
+        uint espressoCount = espressoPurchases[buyer]; // Get the number of espressos purchased by the buyer
+        uint totalMilliliters = (coffeeCount + espressoCount) * 200; // Convert total drinks to milliliters (1 drink = 200 ml)
+
+        // Map milliliters to objects
+        if (totalMilliliters < 2000) {
+            // Less than 2 liters: Baby Bottles (1 Baby Bottle = 250 ml)
+            degree = totalMilliliters / 250;
+            object = "Baby Bottle";
+        } else if (totalMilliliters < 10000) {
+            // Between 2 liters and 10 liters: Buckets (1 Bucket = 750 ml)
+            degree = totalMilliliters / 750;
+            object = "Bucket";
+        } else if (totalMilliliters < 50000) {
+            // Between 10 liters and 50 liters: Bathtubs (1 Bathtub = 50 liters = 50,000 ml)
+            degree = totalMilliliters / 50000;
+            object = "Bathtub";
+        } else {
+            // 50 liters or more: Swimming Pools (1 Swimming Pool = 2,500,000 liters = 2,500,000,000 ml)
+            degree = totalMilliliters / 2500000000;
+            object = "Swimming Pool";
+        }
+
+        return (degree, object);
+    }
+
     function getProductPurchaseCount(string memory product) public view returns (uint) {
         require(isValidProduct(product), "Invalid product");
         if (compareStrings(product, "Coffee")) {
