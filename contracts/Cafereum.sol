@@ -13,7 +13,8 @@ contract Cafereum is ERC721, Ownable {
 
     mapping(address => uint) public coffeePurchases; // Dictionary to track coffee purchases per buyer
     address[] private coffeeBuyers; // Array to track coffee buyers
-    // address payable public owner;
+
+    mapping(address => uint) public moneySpent; // Tracks the total Ether spent by each address
     
     // Top buyer reward NFTs (special token IDs)
     uint256 public constant TOP_COFFEE_BUYER_TOKEN_ID = 1111;
@@ -91,21 +92,19 @@ contract Cafereum is ERC721, Ownable {
         return (names, prices);
     }
 
-    function buyProduct(string memory productType, string memory productStrength) public payable {
+        function buyProduct(string memory productType, string memory productStrength) public payable {
         require(isValidProductType(productType), "Invalid product type");
         require(isValidProductStrength(productStrength), "Invalid product strength");
         require(msg.value == productPrices[productType], "Incorrect amount sent");
 
-        // Update purchase counts
+        // Update the money spent by the buyer
+        moneySpent[msg.sender] += msg.value;
+
         if (compareStrings(productType, "SingleCoffee") || compareStrings(productType, "DoubleCoffee")) {
-            // coffeePurchases[msg.sender]++;
             recordCoffeePurchase(msg.sender, 1);
-            // Check and update top coffee buyer automatically
             _checkAndUpdateTopCoffeeBuyer();
         } else if (compareStrings(productType, "SingleEspresso") || compareStrings(productType, "DoubleEspresso")) {
-            // espressoPurchases[msg.sender]++;
             recordEspressoPurchase(msg.sender, 1);
-            // Check and update top espresso buyer automatically
             _checkAndUpdateTopEspressoBuyer();
         }
 
