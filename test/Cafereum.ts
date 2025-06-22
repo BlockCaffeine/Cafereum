@@ -335,6 +335,47 @@ describe('Cafereum', function () {
       expect(buyers).to.deep.equal([buyer1.address, buyer2.address, buyer3.address]);
       expect(counts).to.deep.equal([1, 1, 1]);
     });
+
+    it('should track the total money spent by each address', async function () {
+      const { cafereum } = await loadFixture(deployCafereumFixture);
+    
+      const [buyer] = await ethers.getSigners();
+      const singleCoffeePrice = await cafereum.getProductPrice("SingleCoffee");
+      const doubleCoffeePrice = await cafereum.getProductPrice("DoubleCoffee");
+    
+      // Buyer purchases a SingleCoffee
+      await cafereum.connect(buyer).buyProduct("SingleCoffee", "Normal", { value: singleCoffeePrice });
+    
+      // Buyer purchases a DoubleCoffee
+      await cafereum.connect(buyer).buyProduct("DoubleCoffee", "Normal", { value: doubleCoffeePrice });
+    
+      // Check the total money spent
+      const totalSpent = await cafereum.getMoneySpent(buyer.address);
+      expect(totalSpent).to.equal(singleCoffeePrice.add(doubleCoffeePrice));
+    });
+
+    it('should return the most frequently ordered category', async function () {
+      const { cafereum } = await loadFixture(deployCafereumFixture);
+    
+      const [buyer1, buyer2, buyer3] = await ethers.getSigners();
+      const singleCoffeePrice = await cafereum.getProductPrice("SingleCoffee");
+      const singleEspressoPrice = await cafereum.getProductPrice("SingleEspresso");
+    
+      // Simulate purchases
+      for (let i = 0; i < 10; i++) {
+        await cafereum.connect(buyer1).buyProduct("SingleCoffee", "Normal", { value: singleCoffeePrice });
+      }
+      for (let i = 0; i < 5; i++) {
+        await cafereum.connect(buyer2).buyProduct("SingleEspresso", "Normal", { value: singleEspressoPrice });
+      }
+    
+      // Call the function
+      const [mostOrderedCategory, orderCount] = await cafereum.getMostFrequentlyOrderedCategory();
+    
+      // Verify the result
+      expect(mostOrderedCategory).to.equal("Coffee");
+      expect(orderCount).to.equal(10);
+    });
   });
 
   describe('getAllEspressoPurchases', function () {
