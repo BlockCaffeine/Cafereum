@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Cafereum is ERC721, Ownable {
     mapping(string => uint) public productPrices;
-    
+
     // mapping(address => uint) public coffeePurchases;
     mapping(address => uint) public espressoPurchases; // Dictionary to track espresso purchases per buyer
     address[] private espressoBuyers; // Array to track espresso buyers
@@ -15,15 +15,15 @@ contract Cafereum is ERC721, Ownable {
     address[] private coffeeBuyers; // Array to track coffee buyers
 
     mapping(address => uint) public moneySpent; // Tracks the total Ether spent by each address
-    
+
     // Top buyer reward NFTs (special token IDs)
     uint256 public constant TOP_COFFEE_BUYER_TOKEN_ID = 1111;
     uint256 public constant TOP_ESPRESSO_BUYER_TOKEN_ID = 2222;
-    
+
     // Track current top buyers
     address public topCoffeeBuyer;
     address public topEspressoBuyer;
-    
+
     // Flag to track internal transfers
     bool private _internalTransfer;
 
@@ -37,7 +37,6 @@ contract Cafereum is ERC721, Ownable {
         uint singleEspressoPrice,
         uint doubleEspressoPrice
     ) ERC721("Cafereum", "CAF") Ownable(msg.sender) {
-
         require(
             isValidProductPrice(singleCoffeePrice),
             "SingleCoffee price should be greater than zero"
@@ -59,11 +58,12 @@ contract Cafereum is ERC721, Ownable {
         productPrices["DoubleCoffee"] = doubleCoffeePrice;
         productPrices["SingleEspresso"] = singleEspressoPrice;
         productPrices["DoubleEspresso"] = doubleEspressoPrice;
-        
+
         // Mint the reward NFTs to the contract at deployment
         _safeMint(address(this), TOP_COFFEE_BUYER_TOKEN_ID);
         _safeMint(address(this), TOP_ESPRESSO_BUYER_TOKEN_ID);
     }
+
     /*
      * Product functions
      * - setProductPrice: Set the price of a product
@@ -92,7 +92,7 @@ contract Cafereum is ERC721, Ownable {
         return (names, prices);
     }
 
-        function buyProduct(string memory productType, string memory productStrength) public payable {
+    function buyProduct(string memory productType, string memory productStrength) public payable {
         require(isValidProductType(productType), "Invalid product type");
         require(isValidProductStrength(productStrength), "Invalid product strength");
         require(msg.value == productPrices[productType], "Incorrect amount sent");
@@ -100,10 +100,16 @@ contract Cafereum is ERC721, Ownable {
         // Update the money spent by the buyer
         moneySpent[msg.sender] += msg.value;
 
-        if (compareStrings(productType, "SingleCoffee") || compareStrings(productType, "DoubleCoffee")) {
+        if (
+            compareStrings(productType, "SingleCoffee") ||
+            compareStrings(productType, "DoubleCoffee")
+        ) {
             recordCoffeePurchase(msg.sender, 1);
             _checkAndUpdateTopCoffeeBuyer();
-        } else if (compareStrings(productType, "SingleEspresso") || compareStrings(productType, "DoubleEspresso")) {
+        } else if (
+            compareStrings(productType, "SingleEspresso") ||
+            compareStrings(productType, "DoubleEspresso")
+        ) {
             recordEspressoPurchase(msg.sender, 1);
             _checkAndUpdateTopEspressoBuyer();
         }
@@ -157,7 +163,11 @@ contract Cafereum is ERC721, Ownable {
     }
 
     // Function to get all coffee purchases with their respective counts
-    function getAllCoffeePurchases() public view returns (address[] memory buyers, uint[] memory counts) {
+    function getAllCoffeePurchases()
+        public
+        view
+        returns (address[] memory buyers, uint[] memory counts)
+    {
         uint length = coffeeBuyers.length;
         buyers = new address[](length);
         counts = new uint[](length);
@@ -179,7 +189,11 @@ contract Cafereum is ERC721, Ownable {
     }
 
     // Function to get all espresso purchases with their respective counts
-    function getAllEspressoPurchases() public view returns (address[] memory buyers, uint[] memory counts) {
+    function getAllEspressoPurchases()
+        public
+        view
+        returns (address[] memory buyers, uint[] memory counts)
+    {
         uint length = espressoBuyers.length;
         buyers = new address[](length);
         counts = new uint[](length);
@@ -193,7 +207,9 @@ contract Cafereum is ERC721, Ownable {
     }
 
     // Function to map coffee purchases to the degree (number of objects) and object name
-    function mapCoffeeToObjects(address buyer) public view returns (uint degree, string memory object) {
+    function mapCoffeeToObjects(
+        address buyer
+    ) public view returns (uint degree, string memory object) {
         uint coffeeCount = coffeePurchases[buyer]; // Get the number of coffees purchased by the buyer
         uint espressoCount = espressoPurchases[buyer]; // Get the number of espressos purchased by the buyer
         uint totalMilliliters = (coffeeCount + espressoCount) * 200; // Convert total drinks to milliliters (1 drink = 200 ml)
@@ -220,7 +236,11 @@ contract Cafereum is ERC721, Ownable {
         return (degree, object);
     }
 
-        function getMostFrequentlyOrderedCategory() public view returns (string memory mostOrderedCategory, uint orderCount) {
+    function getMostFrequentlyOrderedCategory()
+        public
+        view
+        returns (string memory mostOrderedCategory, uint orderCount)
+    {
         // Calculate total coffee purchases
         uint totalCoffeePurchases = 0;
         for (uint i = 0; i < coffeeBuyers.length; i++) {
@@ -275,14 +295,18 @@ contract Cafereum is ERC721, Ownable {
     }
 
     // Function to get the top buyers and their purchase counts
-    function getTopBuyersWithCounts() public view returns (
-        address coffeeBuyer, 
-        uint coffeePurchases_, 
-        address espressoBuyer, 
-        uint espressoPurchases_
-    ) {
+    function getTopBuyersWithCounts()
+        public
+        view
+        returns (
+            address coffeeBuyer,
+            uint coffeePurchases_,
+            address espressoBuyer,
+            uint espressoPurchases_
+        )
+    {
         return (
-            topCoffeeBuyer, 
+            topCoffeeBuyer,
             topCoffeeBuyer != address(0) ? coffeePurchases[topCoffeeBuyer] : 0,
             topEspressoBuyer,
             topEspressoBuyer != address(0) ? espressoPurchases[topEspressoBuyer] : 0
@@ -294,9 +318,13 @@ contract Cafereum is ERC721, Ownable {
      */
 
     // Override transfer functions to prevent external transfers of reward NFTs
-    function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    ) internal override returns (address) {
         address from = _ownerOf(tokenId);
-        
+
         // For reward NFTs, only allow minting or internal contract operations
         if (tokenId == TOP_COFFEE_BUYER_TOKEN_ID || tokenId == TOP_ESPRESSO_BUYER_TOKEN_ID) {
             // Allow minting (from == address(0)) or internal transfers
@@ -304,7 +332,7 @@ contract Cafereum is ERC721, Ownable {
                 require(false, "Reward NFTs can only be transferred by contract");
             }
         }
-        
+
         return super._update(to, tokenId, auth);
     }
 
@@ -323,24 +351,28 @@ contract Cafereum is ERC721, Ownable {
         }
         // Update if the current buyer has more purchases than the current top buyer
         // OR if they have equal purchases and are not already the top buyer (tie-breaker: most recent wins)
-        else if (currentBuyerPurchases > topBuyerPurchases || 
-            (currentBuyerPurchases == topBuyerPurchases && msg.sender != topCoffeeBuyer && topBuyerPurchases > 0)) {
+        else if (
+            currentBuyerPurchases > topBuyerPurchases ||
+            (currentBuyerPurchases == topBuyerPurchases &&
+                msg.sender != topCoffeeBuyer &&
+                topBuyerPurchases > 0)
+        ) {
             address previousTopBuyer = topCoffeeBuyer;
-            
+
             _internalTransfer = true;
-            
+
             // Transfer NFT from previous top buyer back to contract (if exists)
             if (previousTopBuyer != address(0)) {
                 _transfer(previousTopBuyer, address(this), TOP_COFFEE_BUYER_TOKEN_ID);
             }
-            
+
             // Transfer NFT to new top buyer
             _transfer(address(this), msg.sender, TOP_COFFEE_BUYER_TOKEN_ID);
-            
+
             _internalTransfer = false;
-            
+
             topCoffeeBuyer = msg.sender;
-            
+
             emit TopCoffeeBuyerChanged(previousTopBuyer, msg.sender, currentBuyerPurchases);
         }
     }
@@ -348,7 +380,9 @@ contract Cafereum is ERC721, Ownable {
     // Internal function to check and update top espresso buyer
     function _checkAndUpdateTopEspressoBuyer() internal {
         uint currentBuyerPurchases = espressoPurchases[msg.sender];
-        uint topBuyerPurchases = topEspressoBuyer != address(0) ? espressoPurchases[topEspressoBuyer] : 0;
+        uint topBuyerPurchases = topEspressoBuyer != address(0)
+            ? espressoPurchases[topEspressoBuyer]
+            : 0;
 
         // Special case: if the current buyer is already the top buyer, always emit event for their continued dominance
         if (msg.sender == topEspressoBuyer && topEspressoBuyer != address(0)) {
@@ -356,24 +390,28 @@ contract Cafereum is ERC721, Ownable {
         }
         // Update if the current buyer has more purchases than the current top buyer
         // OR if they have equal purchases and are not already the top buyer (tie-breaker: most recent wins)
-        else if (currentBuyerPurchases > topBuyerPurchases || 
-            (currentBuyerPurchases == topBuyerPurchases && msg.sender != topEspressoBuyer && topBuyerPurchases > 0)) {
+        else if (
+            currentBuyerPurchases > topBuyerPurchases ||
+            (currentBuyerPurchases == topBuyerPurchases &&
+                msg.sender != topEspressoBuyer &&
+                topBuyerPurchases > 0)
+        ) {
             address previousTopBuyer = topEspressoBuyer;
-            
+
             _internalTransfer = true;
-            
+
             // Transfer NFT from previous top buyer back to contract (if exists)
             if (previousTopBuyer != address(0)) {
                 _transfer(previousTopBuyer, address(this), TOP_ESPRESSO_BUYER_TOKEN_ID);
             }
-            
+
             // Transfer NFT to new top buyer
             _transfer(address(this), msg.sender, TOP_ESPRESSO_BUYER_TOKEN_ID);
-            
+
             _internalTransfer = false;
-            
+
             topEspressoBuyer = msg.sender;
-            
+
             emit TopEspressoBuyerChanged(previousTopBuyer, msg.sender, currentBuyerPurchases);
         }
     }
