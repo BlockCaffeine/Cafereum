@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Cafereum is ERC721, Ownable {
     mapping(string => uint) public productPrices;
 
-    // mapping(address => uint) public coffeePurchases;
     mapping(address => uint) public espressoPurchases; // Dictionary to track espresso purchases per buyer
     address[] private espressoBuyers; // Array to track espresso buyers
 
@@ -66,8 +65,8 @@ contract Cafereum is ERC721, Ownable {
 
     /*
      * Product functions
-     * - setProductPrice: Set the price of a product
      * - getProductPrice: Get the price of a product
+     * - getProductNamesAndPrices: Get all product names and their prices
      * - buyProduct: Buy a product
      */
 
@@ -97,7 +96,6 @@ contract Cafereum is ERC721, Ownable {
         require(isValidProductStrength(productStrength), "Invalid product strength");
         require(msg.value == productPrices[productType], "Incorrect amount sent");
 
-        // Update the money spent by the buyer
         moneySpent[msg.sender] += msg.value;
 
         if (
@@ -146,6 +144,12 @@ contract Cafereum is ERC721, Ownable {
 
     /*
      * Statistics functions
+     * - recordCoffeePurchase: Record a coffee purchase
+     * - getAllCoffeePurchases: Get all coffee purchases with their respective counts
+     * - recordEspressoPurchase: Record an espresso purchase
+     * - getAllEspressoPurchases: Get all espresso purchases with their respective counts
+     * - mapCoffeeToObjects: Map coffee/espresso purchases to degree and object name
+     * - getMostFrequentlyOrderedCategory: Get the most frequently ordered category and its count
      * - getProductPurchaseCount: Get the number of purchases for a specific product
      * - getTotalPurchases: Get the total number of purchases for an address
      * - getCoffeePurchases: Get the number of coffee purchases for an address
@@ -338,6 +342,13 @@ contract Cafereum is ERC721, Ownable {
 
     /*
      * Internal helper functions
+     * - _checkAndUpdateTopCoffeeBuyer: Check and update the top coffee buyer
+     * - _checkAndUpdateTopEspressoBuyer: Check and update the top espresso buyer
+     * - isValidProductType: Check if a product type is valid
+     * - isValidProduct: Check if a product is valid
+     * - isValidProductStrength: Check if a product strength is valid
+     * - isValidProductPrice: Check if a product price is valid
+     * - compareStrings: Compare two strings for equality
      */
 
     // Internal function to check and update top coffee buyer
