@@ -154,6 +154,7 @@ contract Cafereum is ERC721, Ownable {
      * - getTotalPurchases: Get the total number of purchases for an address
      * - getCoffeePurchases: Get the number of coffee purchases for an address
      * - getEspressoPurchases: Get the number of espresso purchases for an address
+     * - getMoneySpent: Get the total money spent by an address
      * - getTopBuyers: Get the current top buyers for coffee and espresso
      * - getTopBuyersWithCounts: Get the top buyers and their purchase counts
      */
@@ -291,6 +292,11 @@ contract Cafereum is ERC721, Ownable {
     // Public function to get espresso purchases for an address
     function getEspressoPurchases(address buyer) public view returns (uint) {
         return espressoPurchases[buyer];
+    }
+
+    // Public function to get the total money spent by an address
+    function getMoneySpent(address buyer) public view returns (uint) {
+        return moneySpent[buyer];
     }
 
     // Function to check who currently holds the reward NFTs

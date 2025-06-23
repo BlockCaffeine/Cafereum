@@ -351,7 +351,7 @@ describe('Cafereum', function () {
     
       // Check the total money spent
       const totalSpent = await cafereum.getMoneySpent(buyer.address);
-      expect(totalSpent).to.equal(singleCoffeePrice.add(doubleCoffeePrice));
+      expect(totalSpent).to.equal(singleCoffeePrice + doubleCoffeePrice);
     });
 
     it('should return the most frequently ordered category', async function () {
