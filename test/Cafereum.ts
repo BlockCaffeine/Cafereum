@@ -435,8 +435,8 @@ describe('Cafereum', function () {
       const ownerOfABI = ['function ownerOf(uint256 tokenId) view returns (address)'];
       const contract = new hre.ethers.Contract(contractAddress, ownerOfABI, hre.ethers.provider);
       
-      const coffeeNFTOwner = await contract.ownerOf(1111);
-      const espressoNFTOwner = await contract.ownerOf(2222);
+      const coffeeNFTOwner = await contract.ownerOf(11);
+      const espressoNFTOwner = await contract.ownerOf(22);
       
       expect(coffeeNFTOwner).to.equal(contractAddress);
       expect(espressoNFTOwner).to.equal(contractAddress);
@@ -457,7 +457,7 @@ describe('Cafereum', function () {
       ];
       const contract = new hre.ethers.Contract(contractAddress, nftABI, hre.ethers.provider);
       
-      const coffeeNFTOwner = await contract.ownerOf(1111);
+      const coffeeNFTOwner = await contract.ownerOf(11);
       const topCoffeeBuyer = await contract.topCoffeeBuyer();
       const coffeePurchases = await contract.getCoffeePurchases(otherAccount.address);
       
@@ -481,7 +481,7 @@ describe('Cafereum', function () {
       ];
       const contract = new hre.ethers.Contract(contractAddress, nftABI, hre.ethers.provider);
       
-      const espressoNFTOwner = await contract.ownerOf(2222);
+      const espressoNFTOwner = await contract.ownerOf(22);
       const topEspressoBuyer = await contract.topEspressoBuyer();
       const espressoPurchases = await contract.getEspressoPurchases(otherAccount.address);
       
@@ -504,7 +504,7 @@ describe('Cafereum', function () {
       // First buyer buys 1 coffee
       await cafereum.connect(otherAccount).buyProduct('SingleCoffee', 'Normal', { value: SINGLE_COFFEE_PRICE });
       
-      let coffeeNFTOwner = await contract.ownerOf(1111);
+      let coffeeNFTOwner = await contract.ownerOf(11);
       expect(coffeeNFTOwner).to.equal(otherAccount.address);
       
       // Second buyer buys 2 coffees
@@ -512,7 +512,7 @@ describe('Cafereum', function () {
       await cafereum.connect(account2).buyProduct('DoubleCoffee', 'Strong', { value: DOUBLE_COFFEE_PRICE });
       
       // NFT should now belong to account2
-      coffeeNFTOwner = await contract.ownerOf(1111);
+      coffeeNFTOwner = await contract.ownerOf(11);
       const topCoffeeBuyer = await contract.topCoffeeBuyer();
       const coffeePurchases = await contract.getCoffeePurchases(account2.address);
       
@@ -629,7 +629,7 @@ describe('Cafereum', function () {
       const { cafereum, otherAccount, account2, SINGLE_COFFEE_PRICE, SINGLE_ESPRESSO_PRICE } = await loadFixture(deployCafereumFixture);
       
       // Initial state - no purchases
-      expect(await cafereum.getTotalPurchases(otherAccount.address)).to.equal(0);
+      expect(await cafereum.getTotalPurchasesCount(otherAccount.address)).to.equal(0);
       
       // Make some purchases
       await cafereum.connect(otherAccount).buyProduct('SingleCoffee', 'Normal', { value: SINGLE_COFFEE_PRICE });
@@ -637,10 +637,10 @@ describe('Cafereum', function () {
       await cafereum.connect(otherAccount).buyProduct('DoubleCoffee', 'Strong', { value: await cafereum.getProductPrice('DoubleCoffee') });
       
       // Check total purchases (2 coffee + 1 espresso = 3)
-      expect(await cafereum.getTotalPurchases(otherAccount.address)).to.equal(3);
+      expect(await cafereum.getTotalPurchasesCount(otherAccount.address)).to.equal(3);
       
       // Check that account2 still has 0 purchases
-      expect(await cafereum.getTotalPurchases(account2.address)).to.equal(0);
+      expect(await cafereum.getTotalPurchasesCount(account2.address)).to.equal(0);
     });
 
     it('Should prevent manual transfer of reward NFTs', async function () {
@@ -656,14 +656,14 @@ describe('Cafereum', function () {
       ];
       const contract = new hre.ethers.Contract(contractAddress, nftABI, hre.ethers.provider);
       
-      let coffeeNFTOwner = await contract.ownerOf(1111);
+      let coffeeNFTOwner = await contract.ownerOf(11);
       expect(coffeeNFTOwner).to.equal(otherAccount.address);
       
       // Try to manually transfer the NFT - should fail  
       // We'll use the provider to send a raw transaction that should fail
       const transferData = hre.ethers.AbiCoder.defaultAbiCoder().encode(
         ['bytes4', 'address', 'address', 'uint256'],
-        ['0x23b872dd', otherAccount.address, account2.address, 1111] // transferFrom function selector
+        ['0x23b872dd', otherAccount.address, account2.address, 11] // transferFrom function selector
       );
       
       await expect(
@@ -674,7 +674,7 @@ describe('Cafereum', function () {
       ).to.be.reverted;
       
       // NFT should still belong to original owner
-      coffeeNFTOwner = await contract.ownerOf(1111);
+      coffeeNFTOwner = await contract.ownerOf(11);
       expect(coffeeNFTOwner).to.equal(otherAccount.address);
     });
 
@@ -693,13 +693,13 @@ describe('Cafereum', function () {
       ];
       const contract = new hre.ethers.Contract(contractAddress, nftABI, hre.ethers.provider);
       
-      const coffeeNFTOwner = await contract.ownerOf(1111);
-      const espressoNFTOwner = await contract.ownerOf(2222);
+      const coffeeNFTOwner = await contract.ownerOf(11);
+      const espressoNFTOwner = await contract.ownerOf(22);
       const balance = await contract.balanceOf(otherAccount.address);
       
       expect(coffeeNFTOwner).to.equal(otherAccount.address);
       expect(espressoNFTOwner).to.equal(otherAccount.address);
-      expect(balance).to.equal(2n);
+      expect(balance).to.equal(3n); // 2 reward NFTs + 1 milestone NFT for first purchase
     });
 
     it('Should allow minting and transferring of non-reward NFTs', async function () {
@@ -715,7 +715,7 @@ describe('Cafereum', function () {
       
       // Since our contract doesn't have a public mint function, we need to add one for testing
       // For now, let's test that non-reward token IDs would be allowed to transfer
-      // We can simulate this by testing with any token ID that's not 1111 or 2222
+      // We can simulate this by testing with any token ID that's not 11 or 22
       
       // This test shows that _update allows normal ERC721 transfers for non-reward tokens
       // The coverage will be hit when super._update is called for non-reward tokens

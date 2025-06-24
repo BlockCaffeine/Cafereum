@@ -15,6 +15,10 @@ contract Cafereum is ERC721, Ownable {
 
     mapping(address => uint) public moneySpent; // Tracks the total Ether spent by each address
 
+    // Overall counters for total purchases
+    uint public totalCoffeePurchases; // Total coffee purchases across all users
+    uint public totalEspressoPurchases; // Total espresso purchases across all users
+
     mapping(uint256 => string) private _tokenURIs; // NFT metadata storage
 
     // Top buyer reward NFTs (special token IDs)
@@ -25,12 +29,18 @@ contract Cafereum is ERC721, Ownable {
     address public topCoffeeBuyer;
     address public topEspressoBuyer;
 
+    // Milestone NFT system
+    uint256 private _milestoneTokenCounter = 100; // Counter starting at 100 for milestone NFTs
+    mapping(address => uint) private _lastPersonalMilestone; // Track last personal milestone for each buyer
+    uint private _lastCafereumMilestoneMinted; // Track last Cafereum-wide milestone minted
+
     // Flag to track internal transfers
     bool private _internalTransfer;
 
     event ProductPurchased(string productType, string productStrength);
     event TopCoffeeBuyerChanged(address previousBuyer, address newBuyer, uint purchaseCount);
     event TopEspressoBuyerChanged(address previousBuyer, address newBuyer, uint purchaseCount);
+    event MilestoneNFTMinted(address buyer, uint256 tokenId, string uri, uint256 milestone);
 
     constructor(
         uint singleCoffeePrice,
@@ -117,6 +127,17 @@ contract Cafereum is ERC721, Ownable {
             _checkAndUpdateTopEspressoBuyer();
         }
 
+        // Check for milestone NFT minting after recording purchase
+        bool freeProductPersonal = _checkAndMintPersonalMilestoneNFT(msg.sender);
+        bool freeProductCafereum = _checkAndMintCafereumMilestoneNFT(msg.sender);
+
+        
+        // If milestone reached, refund the purchase amount
+        if (freeProductPersonal || freeProductCafereum) {
+            payable(msg.sender).transfer(msg.value);
+            moneySpent[msg.sender] -= msg.value; // Adjust moneySpent since it's free
+        }
+
         emit ProductPurchased(productType, productStrength);
     }
 
@@ -155,8 +176,9 @@ contract Cafereum is ERC721, Ownable {
      * - getAllEspressoPurchases: Get all espresso purchases with their respective counts
      * - mapCoffeeToObjects: Map coffee/espresso purchases to degree and object name
      * - getMostFrequentlyOrderedCategory: Get the most frequently ordered category and its count of specific buyer
-     * - getProductPurchaseCount: Get the number of purchases for a specific product
-     * - getTotalPurchases: Get the total number of purchases for an address
+     * - getProductPurchaseCount: Get the number of purchases for a specific product across all users
+     * - getTotalPurchasesCountOverall: Get the total number of purchases across all users and products
+     * - getTotalPurchasesCount: Get the total number of purchases for an address
      * - getCoffeePurchases: Get the number of coffee purchases for an address
      * - getEspressoPurchases: Get the number of espresso purchases for an address
      * - getMoneySpent: Get the total money spent by an address
@@ -170,6 +192,7 @@ contract Cafereum is ERC721, Ownable {
             coffeeBuyers.push(buyer); // Add buyer to the list if not already present
         }
         coffeePurchases[buyer] += count;
+        totalCoffeePurchases += count; // Update global counter
     }
 
     // Function to get all coffee purchases with their respective counts
@@ -196,6 +219,7 @@ contract Cafereum is ERC721, Ownable {
             espressoBuyers.push(buyer); // Add buyer to the list if not already present
         }
         espressoPurchases[buyer] += count;
+        totalEspressoPurchases += count; // Update global counter
     }
 
     // Function to get all espresso purchases with their respective counts
@@ -250,18 +274,18 @@ contract Cafereum is ERC721, Ownable {
         address buyer
     ) public view returns (string memory mostOrderedCategory, uint orderCount) {
         // Get the total coffee purchases for the buyer
-        uint totalCoffeePurchases = coffeePurchases[buyer];
+        uint buyerCoffeePurchases = coffeePurchases[buyer];
 
         // Get the total espresso purchases for the buyer
-        uint totalEspressoPurchases = espressoPurchases[buyer];
+        uint buyerEspressoPurchases = espressoPurchases[buyer];
 
         // Compare coffee and espresso purchases for the buyer
-        if (totalCoffeePurchases >= totalEspressoPurchases) {
+        if (buyerCoffeePurchases >= buyerEspressoPurchases) {
             mostOrderedCategory = "Coffee";
-            orderCount = totalCoffeePurchases;
+            orderCount = buyerCoffeePurchases;
         } else {
             mostOrderedCategory = "Espresso";
-            orderCount = totalEspressoPurchases;
+            orderCount = buyerEspressoPurchases;
         }
 
         return (mostOrderedCategory, orderCount);
@@ -269,15 +293,20 @@ contract Cafereum is ERC721, Ownable {
 
     function getProductPurchaseCount(string memory product) public view returns (uint) {
         require(isValidProduct(product), "Invalid product");
+        
         if (compareStrings(product, "Coffee")) {
-            return coffeePurchases[msg.sender];
+            return totalCoffeePurchases;
         } else {
-            return espressoPurchases[msg.sender];
+            return totalEspressoPurchases;
         }
     }
 
+    function getTotalPurchasesCountOverall() public view returns (uint) {
+        return totalCoffeePurchases + totalEspressoPurchases;
+    }
+
     // Public function to get total purchases for an address
-    function getTotalPurchases(address buyer) public view returns (uint) {
+    function getTotalPurchasesCount(address buyer) public view returns (uint) {
         return coffeePurchases[buyer] + espressoPurchases[buyer];
     }
 
@@ -356,10 +385,30 @@ contract Cafereum is ERC721, Ownable {
         return super._update(to, tokenId, auth);
     }
 
+    // Function to mint milestone NFTs
+    function _mintMilestoneNFT(
+        address buyer,
+        string memory uri,
+        uint256 milestone
+    ) internal {
+        require(buyer != address(0), "Invalid buyer address");
+        require(milestone > 0, "Milestone must be greater than zero");
+
+        // Mint the milestone NFT
+        _safeMint(buyer, _milestoneTokenCounter);
+        setTokenURI(_milestoneTokenCounter, uri);
+
+        emit MilestoneNFTMinted(buyer, _milestoneTokenCounter, uri, milestone);
+
+        _milestoneTokenCounter++; 
+    }
+
     /*
      * Internal helper functions
      * - _checkAndUpdateTopCoffeeBuyer: Check and update the top coffee buyer
      * - _checkAndUpdateTopEspressoBuyer: Check and update the top espresso buyer
+     * - _checkAndMintPersonalMilestoneNFT: Check and mint milestone NFTs
+     * - _checkAndMintCafereumMilestoneNFT: Check and mint Cafereum milestone NFTs
      * - isValidProductType: Check if a product type is valid
      * - isValidProduct: Check if a product is valid
      * - isValidProductStrength: Check if a product strength is valid
@@ -441,6 +490,44 @@ contract Cafereum is ERC721, Ownable {
 
             emit TopEspressoBuyerChanged(previousTopBuyer, msg.sender, currentBuyerPurchases);
         }
+    }
+
+    function _checkAndMintPersonalMilestoneNFT(address buyer) internal returns (bool) {
+        uint totalPurchases = getTotalPurchasesCount(buyer);
+        uint lastPersonalMilestone = _lastPersonalMilestone[buyer];
+
+        string memory personalMilestoneURI = "ipfs://bafkreiha2renmdc77vrdpi5qp3cl3rgyq7jyytq577oj2lhh3xpvlnjq5m";
+
+        // Check if the buyer has reached a new milestone
+        if (totalPurchases == 1 && lastPersonalMilestone < 1) {
+            _mintMilestoneNFT(buyer, personalMilestoneURI, 1);
+            _lastPersonalMilestone[buyer] = 1;
+        } else if (totalPurchases == 5 && lastPersonalMilestone < 5) {
+            _mintMilestoneNFT(buyer, personalMilestoneURI, 5);
+            _lastPersonalMilestone[buyer] = 5;
+        } else if (totalPurchases == 10 && lastPersonalMilestone < 10) {
+            _mintMilestoneNFT(buyer, personalMilestoneURI, 10);
+            _lastPersonalMilestone[buyer] = 10;
+        } else if (totalPurchases % 20 == 0 && totalPurchases > 0 && totalPurchases > lastPersonalMilestone) {
+            // Mint a milestone NFT for every 20th purchase
+            _mintMilestoneNFT(buyer, personalMilestoneURI, totalPurchases);
+            _lastPersonalMilestone[buyer] = totalPurchases;
+            return true; // Return true to indicate a free product
+        }
+        return false; // Return false to indicate no free product
+    }
+
+    function _checkAndMintCafereumMilestoneNFT(address buyer) internal returns (bool) {
+        uint totalPurchasesCount = getTotalPurchasesCountOverall();
+
+        // Check for Cafereum-wide milestones (e.g., every 100 total purchases)
+        if (totalPurchasesCount % 100 == 0 && totalPurchasesCount > 0 && totalPurchasesCount > _lastCafereumMilestoneMinted) {
+            string memory cafereumMilestoneURI = "ipfs://bafkreib2hrng73y574zucgkfqio7csy7kz27aqphnwthjir3c6etrcfwvi";
+            _mintMilestoneNFT(buyer, cafereumMilestoneURI, totalPurchasesCount);
+            _lastCafereumMilestoneMinted = totalPurchasesCount;
+            return true; // Return true to indicate a free product
+        }
+        return false; // Return false to indicate no free product
     }
 
     function isValidProductType(string memory productType) internal pure returns (bool) {
