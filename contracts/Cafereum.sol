@@ -241,7 +241,9 @@ contract Cafereum is ERC721, Ownable {
         return (degree, object);
     }
 
-        function getMostFrequentlyOrderedCategory(address buyer) public view returns (string memory mostOrderedCategory, uint orderCount) {
+    function getMostFrequentlyOrderedCategory(
+        address buyer
+    ) public view returns (string memory mostOrderedCategory, uint orderCount) {
         // Get the total coffee purchases for the buyer
         uint totalCoffeePurchases = coffeePurchases[buyer];
 
