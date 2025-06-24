@@ -354,27 +354,39 @@ describe('Cafereum', function () {
       expect(totalSpent).to.equal(singleCoffeePrice + doubleCoffeePrice);
     });
 
-    it('should return the most frequently ordered category', async function () {
+    it('should return the most frequently ordered category for a specific buyer', async function () {
       const { cafereum } = await loadFixture(deployCafereumFixture);
     
-      const [buyer1, buyer2, buyer3] = await ethers.getSigners();
+      const [buyer1, buyer2] = await ethers.getSigners();
       const singleCoffeePrice = await cafereum.getProductPrice("SingleCoffee");
       const singleEspressoPrice = await cafereum.getProductPrice("SingleEspresso");
     
-      // Simulate purchases
+      // Simulate purchases for buyer1
       for (let i = 0; i < 10; i++) {
         await cafereum.connect(buyer1).buyProduct("SingleCoffee", "Normal", { value: singleCoffeePrice });
       }
       for (let i = 0; i < 5; i++) {
+        await cafereum.connect(buyer1).buyProduct("SingleEspresso", "Normal", { value: singleEspressoPrice });
+      }
+    
+      // Simulate purchases for buyer2
+      for (let i = 0; i < 3; i++) {
         await cafereum.connect(buyer2).buyProduct("SingleEspresso", "Normal", { value: singleEspressoPrice });
       }
     
-      // Call the function
-      const [mostOrderedCategory, orderCount] = await cafereum.getMostFrequentlyOrderedCategory();
+      // Call the function for buyer1
+      const [mostOrderedCategory1, orderCount1] = await cafereum.getMostFrequentlyOrderedCategory(buyer1.address);
     
-      // Verify the result
-      expect(mostOrderedCategory).to.equal("Coffee");
-      expect(orderCount).to.equal(10);
+      // Verify the result for buyer1
+      expect(mostOrderedCategory1).to.equal("Coffee");
+      expect(orderCount1).to.equal(10);
+    
+      // Call the function for buyer2
+      const [mostOrderedCategory2, orderCount2] = await cafereum.getMostFrequentlyOrderedCategory(buyer2.address);
+    
+      // Verify the result for buyer2
+      expect(mostOrderedCategory2).to.equal("Espresso");
+      expect(orderCount2).to.equal(3);
     });
   });
 

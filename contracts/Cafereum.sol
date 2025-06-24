@@ -149,7 +149,7 @@ contract Cafereum is ERC721, Ownable {
      * - recordEspressoPurchase: Record an espresso purchase
      * - getAllEspressoPurchases: Get all espresso purchases with their respective counts
      * - mapCoffeeToObjects: Map coffee/espresso purchases to degree and object name
-     * - getMostFrequentlyOrderedCategory: Get the most frequently ordered category and its count
+     * - getMostFrequentlyOrderedCategory: Get the most frequently ordered category and its count of specific buyer
      * - getProductPurchaseCount: Get the number of purchases for a specific product
      * - getTotalPurchases: Get the total number of purchases for an address
      * - getCoffeePurchases: Get the number of coffee purchases for an address
@@ -241,24 +241,14 @@ contract Cafereum is ERC721, Ownable {
         return (degree, object);
     }
 
-    function getMostFrequentlyOrderedCategory()
-        public
-        view
-        returns (string memory mostOrderedCategory, uint orderCount)
-    {
-        // Calculate total coffee purchases
-        uint totalCoffeePurchases = 0;
-        for (uint i = 0; i < coffeeBuyers.length; i++) {
-            totalCoffeePurchases += coffeePurchases[coffeeBuyers[i]];
-        }
+        function getMostFrequentlyOrderedCategory(address buyer) public view returns (string memory mostOrderedCategory, uint orderCount) {
+        // Get the total coffee purchases for the buyer
+        uint totalCoffeePurchases = coffeePurchases[buyer];
 
-        // Calculate total espresso purchases
-        uint totalEspressoPurchases = 0;
-        for (uint i = 0; i < espressoBuyers.length; i++) {
-            totalEspressoPurchases += espressoPurchases[espressoBuyers[i]];
-        }
+        // Get the total espresso purchases for the buyer
+        uint totalEspressoPurchases = espressoPurchases[buyer];
 
-        // Compare coffee and espresso purchases
+        // Compare coffee and espresso purchases for the buyer
         if (totalCoffeePurchases >= totalEspressoPurchases) {
             mostOrderedCategory = "Coffee";
             orderCount = totalCoffeePurchases;
