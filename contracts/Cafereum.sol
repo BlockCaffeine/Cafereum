@@ -15,9 +15,11 @@ contract Cafereum is ERC721, Ownable {
 
     mapping(address => uint) public moneySpent; // Tracks the total Ether spent by each address
 
+    mapping(uint256 => string) private _tokenURIs; // NFT metadata storage
+
     // Top buyer reward NFTs (special token IDs)
-    uint256 public constant TOP_COFFEE_BUYER_TOKEN_ID = 1111;
-    uint256 public constant TOP_ESPRESSO_BUYER_TOKEN_ID = 2222;
+    uint256 public constant TOP_COFFEE_BUYER_TOKEN_ID = 11;
+    uint256 public constant TOP_ESPRESSO_BUYER_TOKEN_ID = 22;
 
     // Track current top buyers
     address public topCoffeeBuyer;
@@ -60,7 +62,10 @@ contract Cafereum is ERC721, Ownable {
 
         // Mint the reward NFTs to the contract at deployment
         _safeMint(address(this), TOP_COFFEE_BUYER_TOKEN_ID);
+        setTokenURI(TOP_COFFEE_BUYER_TOKEN_ID, "ipfs://bafkreiciti6kni4b7ghsi5cy6d2txoo6lslwd2idgokh2jkcmyhs3dpy5u");
+
         _safeMint(address(this), TOP_ESPRESSO_BUYER_TOKEN_ID);
+        setTokenURI(TOP_ESPRESSO_BUYER_TOKEN_ID, "ipfs://bafkreidwv5tskxeqydlr7glou2sgzhvzl55xwvfdhb2c6eh47geisd36h4");
     }
 
     /*
@@ -318,6 +323,19 @@ contract Cafereum is ERC721, Ownable {
     /*
      * NFT functions
      */
+
+    // Function to set token URI for reward NFTs (only owner)
+    function setTokenURI(uint256 tokenId, string memory uri) private {
+        _tokenURIs[tokenId] = uri;
+    }
+
+    // Override tokenURI to return custom metadata
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        require(_ownerOf(tokenId) != address(0), "ERC721: URI query for nonexistent token");
+
+        string memory _tokenURI = _tokenURIs[tokenId];
+        return _tokenURI;
+    }
 
     // Override transfer functions to prevent external transfers of reward NFTs
     function _update(
