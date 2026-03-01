@@ -11,7 +11,7 @@
     "withdraw-contract-balance": "npx hardhat run scripts/withdraw-contract-balance.ts"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^6.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
     "dotenv": "^16.5.0",
     "ethers": "^6.14.4",
     "hardhat": "^2.25.0"
